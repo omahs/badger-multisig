@@ -29,11 +29,14 @@ def main(mantissa):
     mantissa = Decimal(mantissa)
 
     safe = GreatApeSafe(registry.eth.badger_wallets.treasury_ops_multisig)
+    badger = interface.ERC20(
+        registry.eth.treasury_tokens.BADGER, owner=safe.account
+    )
     l1_router = interface.IL1GatewayRouter(
         registry.eth.arbitrum.l1_gateway_router, owner=safe.account
     )
-    badger = interface.ERC20(
-        registry.eth.treasury_tokens.BADGER, owner=safe.account
+    l1_gateway = interface.IL1ERC20Gateway(
+        l1_router.getGateway(badger), owner=safe.account
     )
 
     l2 = Web3(HTTPProvider(network.main.CONFIG.networks['arbitrum']['host']))
@@ -42,7 +45,15 @@ def main(mantissa):
         ['uint256', 'bytes'], (MAX_SUBMISSION_COST, b'')
     ).hex()
 
-    badger.approve(l1_router.getGateway(badger), mantissa)
+    print(l1_gateway.getOutboundCalldata(
+        badger,
+        safe,
+        registry.arbitrum.badger_wallets.techops_multisig,
+        mantissa,
+        b''
+    ))
+
+    badger.approve(l1_gateway, mantissa)
     l1_router.outboundTransfer(
         badger,
         registry.arbitrum.badger_wallets.techops_multisig,
@@ -53,4 +64,20 @@ def main(mantissa):
         {'value': MAX_SUBMISSION_COST + (MAX_GAS * gas_price_bid)}
     )
 
+    safe.post_safe_tx(call_trace=True)
+
+
+def retrieve_on_arbitrum():
+    # note that this needs to be called on arbitrum, not mainnet
+    # currently i dont see a way to do this scripted (at least not without
+    # completely integrating their sdk)
+    # best way is probably to use the ui to create the following calldata:
+    # createRetryableTicket(address,uint256,uint256,address,address,uint256,uint256,bytes)
+    # https://developer.offchainlabs.com/docs/sol_contract_docs/md_docs/arb-bridge-eth/bridge/inbox#createretryableticketaddress-destaddr-uint256-l2callvalue-uint256-maxsubmissioncost-address-excessfeerefundaddress-address-callvaluerefundaddress-uint256-maxgas-uint256-gaspricebid-bytes-data-%E2%86%92-uint256-external
+    calldata = None
+
+    safe = GreatApeSafe(registry.arbitrum.badger_wallets.techops_multisig)
+    safe.account.transfer(
+        registry.arbitrum.arbitrum.arb_retryable_tx, data=calldata
+    )
     safe.post_safe_tx(call_trace=True)
