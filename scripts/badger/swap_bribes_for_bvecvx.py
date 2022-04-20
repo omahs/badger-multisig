@@ -48,7 +48,6 @@ def swap_all_bribes_for_weth(coef=.985):
         token = SAFE.contract(addr)
         balance = token.balanceOf(SAFE)
         if balance > 0:
-            SAFE.allow_relayer(token, balance)
             SAFE.cow.market_sell(
                 token, WETH, balance, deadline=60*60, coef=coef
             )

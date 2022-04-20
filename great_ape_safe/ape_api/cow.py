@@ -142,6 +142,7 @@ class Cow():
         mantissa_sell is exact and order is submitted at quoted rate
         """
         assert type(chunks) == int
+        self.allow_relayer(asset_sell, mantissa_sell)
         mantissa_sell = int(Decimal(mantissa_sell) / chunks)
         for n in range(chunks):
             self._sell(
