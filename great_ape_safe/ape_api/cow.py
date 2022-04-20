@@ -133,10 +133,7 @@ class Cow():
         )
         if allowance < mantissa:
             asset.approve(self.vault_relayer, mantissa)
-            assert asset.allowance(self.safe, self.vault_relayer) >= mantissa
-            print('approval needs to be executed on-chain before order can be posted to api!\n')
-            self.safe.post_safe_tx()
-            sys.exit()
+            assert asset.allowance(self.safe, self.vault_relayer) == mantissa
 
 
     def market_sell(self, asset_sell, asset_buy, mantissa_sell, deadline=60*60, chunks=1, coef=1, destination=None):
@@ -145,7 +142,6 @@ class Cow():
         mantissa_sell is exact and order is submitted at quoted rate
         """
         assert type(chunks) == int
-        self.allow_relayer(asset_sell, mantissa_sell)
         mantissa_sell = int(Decimal(mantissa_sell) / chunks)
         for n in range(chunks):
             self._sell(

@@ -33,40 +33,24 @@ WANT_TO_SELL.pop('CVX') # SameBuyAndSellToken
 WANT_TO_SELL.pop('MTA')
 WANT_TO_SELL.pop('NSBT')
 
-# percentage of the bribes that is used to buyback $badger
-BADGER_SHARE = .275
-# percentage of the bribes that are dedicated to the treasury
+# percentage of the bribes that is used to incentivise the bbvecvxcvx sett
+# with $badger emissions
+LIQ_FEE = .05
+# percentage of the bribes that is dedicated to the treasury (taken in bvecvx)
 OPS_FEE = .05
+# total percentage of the bribes that is used to buyback $badger
+BADGER_SHARE = round(.25 * (1. - LIQ_FEE - OPS_FEE) + LIQ_FEE, 4)
 
 
-def multi_approve():
-    SAFE.init_cow()
-    for symbol, addr in WANT_TO_SELL.items():
-        token = SAFE.contract(addr)
-        if token.balanceOf(SAFE) > 0:
-            print(symbol, token.balanceOf(SAFE))
-            token.approve(SAFE.cow.vault_relayer, token.balanceOf(SAFE))
-    SAFE.post_safe_tx(call_trace=True)
-
-
-def multi_sell():
+def swap_all_bribes_for_weth(coef=.985):
     SAFE.init_cow()
     for _, addr in WANT_TO_SELL.items():
         token = SAFE.contract(addr)
-        if token.balanceOf(SAFE) > 0:
+        balance = token.balanceOf(SAFE)
+        if balance > 0:
+            SAFE.allow_relayer(token, balance)
             SAFE.cow.market_sell(
-                token, CVX, token.balanceOf(SAFE), deadline=60*60*4
-            )
-    SAFE.post_safe_tx()
-
-
-def multi_sell_cheap(coef=.985):
-    SAFE.init_cow()
-    for _, addr in WANT_TO_SELL.items():
-        token = SAFE.contract(addr)
-        if token.balanceOf(SAFE) > 0:
-            SAFE.cow.market_sell(
-                token, WETH, token.balanceOf(SAFE), deadline=60*60, coef=coef
+                token, WETH, balance, deadline=60*60, coef=coef
             )
     SAFE.post_safe_tx()
 
