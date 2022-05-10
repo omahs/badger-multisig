@@ -127,6 +127,24 @@ def step2():
     SAFE.post_safe_tx(call_trace=True)
 
 
+def step2_redo_cvx(badger_share):
+    badger_share = Decimal(badger_share)
+    cvx_share = WETH.balanceOf(PROCESSOR) - badger_share
+
+    order_payload, order_uid = SAFE.badger.get_order_for_processor(
+        sell_token=WETH,
+        mantissa_sell=cvx_share,
+        buy_token=CVX,
+        coef=.99,
+        prod=COW_PROD
+    )
+    # bribes processor doesnt accept fee > 10% of total order
+    assert int(order_payload[7]) < .1 * int(order_payload[3])
+    PROCESSOR.swapWethForCVX(order_payload, order_uid)
+
+    SAFE.post_safe_tx(call_trace=True)
+
+
 def step3():
     if CVX.balanceOf(PROCESSOR) > 0:
         PROCESSOR.swapCVXTobveCVXAndEmit()
