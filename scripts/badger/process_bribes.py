@@ -128,6 +128,8 @@ def step2():
 
 
 def step3():
-    PROCESSOR.swapCVXTobveCVXAndEmit()
-    PROCESSOR.emitBadger()
+    if CVX.balanceOf(PROCESSOR) > 0:
+        PROCESSOR.swapCVXTobveCVXAndEmit()
+    if BADGER.balanceOf(PROCESSOR) > 0:
+        PROCESSOR.emitBadger()
     SAFE.post_safe_tx(call_trace=True)
