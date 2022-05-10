@@ -291,7 +291,7 @@ class Badger():
         mantissa_sell,
         buy_token,
         mantissa_buy=None,
-        deadline=60*60,
+        deadline=60*60*4,
         coef=1,
         prod=False
     ):
