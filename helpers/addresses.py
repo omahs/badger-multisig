@@ -473,6 +473,7 @@ ADDRESSES_ETH = {
         "B_80_BAL_20_WETH": "0x5c6ee304399dbdb9c8ef030ab642b10820db8f56",
         "veBAL": "0xC128a9954e6c874eA3d62ce62B468bA073093F25",
         "minter": "0x239e55F427D44C3cc793f49bFB507ebe76638a2b",
+        "bpt_aurabal": "0x3dd0843a028c86e0b760b1a76929d1c5ef93a2dd",
     },
     "hidden_hand": {
         "bribe_vault": "0x9DDb2da7Dd76612e0df237B89AF2CF4413733212",
@@ -489,6 +490,10 @@ ADDRESSES_ETH = {
     },
     "gnosis": {
         "sign_message_lib": "0xA65387F16B013cf2Af4605Ad8aA5ec25a2cbA3a2",
+    },
+    "aura": {
+        "wrapper": "0x68655AD9852a99C87C0934c7290BB62CFa5D4123",
+        "depositor": "0xeAd792B55340Aa20181A80d6a16db6A0ECd1b827",
     },
 }
 
@@ -843,6 +848,17 @@ ADDRESSES_FANTOM = {
     }
 }
 
+ADDRESSES_KOVAN = {
+    "treasury_tokens": {
+        "WETH": "0xdFCeA9088c8A88A76FF74892C1457C17dfeef9C1",
+        "BAL": "0xcb355677E36f390Ccc4a5d4bEADFbF1Eb2071c81",
+    },
+    "aura": {
+        "wrapper": "0x04Cad0f53D69Ad75e3cC42F86405223783BCdd8E",
+        "depositor": "0xc8362A7454eE6f400d0376D37C703Fbd8BCC22e8",
+    },
+}
+
 
 def checksum_address_dict(addresses):
     """
@@ -872,6 +888,7 @@ registry = DotMap({
     "arbitrum": checksum_address_dict(ADDRESSES_ARBITRUM),
     "rinkeby": checksum_address_dict(ADDRESSES_RINKEBY),
     "ftm": checksum_address_dict(ADDRESSES_FANTOM),
+    "kovan": checksum_address_dict(ADDRESSES_KOVAN),
 })
 
 
@@ -886,7 +903,8 @@ def get_registry():
         return registry.arbitrum
     elif chain.id == 250:
         return registry.ftm
-
+    elif chain.id == 42:
+        return registry.kovan
 
 r = get_registry()
 
