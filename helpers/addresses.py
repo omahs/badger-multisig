@@ -179,6 +179,8 @@ ADDRESSES_ETH = {
         "BORING": "0xBC19712FEB3a26080eBf6f2F7849b417FdD792CA",
         "PNT": "0x89Ab32156e46F46D02ade3FEcbe5Fc4243B9AAeD",
         "LINK": "0x514910771AF9Ca656af840dff83E8264EcF986CA",
+        "AURA": "0xC0c293ce456fF0ED870ADd98a0828Dd4d2903DBF",
+        "AURABAL": "0x616e8BfA43F920657B3497DBf40D6b1A02D4608d",
     },
     # every slp token listed in treasury tokens above must also be listed here.
     # the lp_tokens in this list are processed by scount to determine holdings
