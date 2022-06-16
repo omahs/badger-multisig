@@ -1,83 +1,71 @@
+from brownie import ETH_ADDRESS
+
 from helpers.addresses import registry
 
 
 class Compound():
     def __init__(self, safe):
-        self.safe           = safe
+        self.safe = safe
+
         # tokens
-        self.comp           = safe.contract(registry.eth.treasury_tokens.COMP)
+        self.comp = safe.contract(registry.eth.treasury_tokens.COMP)
+
         # contracts
-        self.comptroller    = safe.contract(registry.eth.compound.comptroller)
+        self.comptroller = safe.contract(registry.eth.compound.comptroller)
+
+
+    def _get_ctoken(self, underlying):
+        for ctoken in self.comptroller.getAllMarkets():
+            ctoken = self.safe.contract(ctoken)
+            try:
+                if underlying == ETH_ADDRESS:
+                    if ctoken.symbol() == 'cETH':
+                        return ctoken
+                elif ctoken.underlying() == underlying.address:
+                    if self.comptroller.mintGuardianPaused(ctoken):
+                        # eg old cwbtc contract has been replaced by cwbtc2
+                        continue
+                    return ctoken
+            except AttributeError:
+                # $ceth has no underlying
+                if ctoken.symbol() == 'cETH':
+                    pass
+                else:
+                    # in case `AttributeError` stems from something else
+                    raise
+        # for loop did not find `underlying`
+        raise
 
 
     def deposit(self, underlying, mantissa):
         # deposit `mantissa` amount of `underlying` into its respective compound's ctoken
         # https://compound.finance/docs/ctokens#mint
-        for ctoken in self.comptroller.getAllMarkets():
-            ctoken = self.safe.contract(ctoken)
-            try:
-                if ctoken.underlying() == underlying.address:
-                    if self.comptroller.mintGuardianPaused(ctoken):
-                        # eg old cwbtc contract has been replaced by cwbtc2
-                        continue
-                    underlying.approve(ctoken, mantissa)
-                    assert ctoken.mint(mantissa).return_value == 0
-                    return
-            except AttributeError:
-                # $ceth has no underlying
-                if ctoken.symbol() == 'cETH':
-                    pass
-                else:
-                    # in case `AttributeError` stems from something else
-                    raise
-        # for loop did not find `underlying`
-        raise
+        ctoken = self._get_ctoken(underlying)
+        underlying.approve(ctoken, mantissa)
+        assert ctoken.mint(mantissa).return_value == 0
 
 
     def deposit_eth(self, mantissa):
         # deposit `mantissa` amount of $eth into its respective compound's ctoken
         # https://compound.finance/docs/ctokens#mint
-        for ctoken in self.comptroller.getAllMarkets():
-            ctoken = self.safe.contract(ctoken)
-            if ctoken.symbol() == 'cETH':
-                bal_before = ctoken.balanceOf(self.safe)
-                ctoken.mint({'from': self.safe.address, 'value': mantissa})
-                assert ctoken.balanceOf(self.safe) > bal_before
-                return
-        # for loop did not find $ceth
-        raise
+        ctoken = self._get_ctoken(ETH_ADDRESS)
+        bal_before = ctoken.balanceOf(self.safe)
+        ctoken.mint({'from': self.safe.address, 'value': mantissa})
+        assert ctoken.balanceOf(self.safe) > bal_before
 
 
     def withdraw(self, underlying, mantissa):
         # withdraw `mantissa` amount of `underlying` from its corresponding ctoken
         # https://compound.finance/docs/ctokens#redeem-underlying
-        for ctoken in self.comptroller.getAllMarkets():
-            ctoken = self.safe.contract(ctoken)
-            try:
-                if ctoken.underlying() == underlying.address:
-                    assert ctoken.redeemUnderlying(mantissa).return_value == 0
-                    return
-            except AttributeError:
-                # $ceth has no underlying
-                if ctoken.symbol() == 'cETH':
-                    pass
-                else:
-                    # in case `AttributeError` stems from something else
-                    raise
-        # for loop did not find `underlying`
-        raise
+        ctoken = self._get_ctoken(underlying)
+        assert ctoken.redeemUnderlying(mantissa).return_value == 0
 
 
     def withdraw_eth(self, mantissa):
         # withdraw `mantissa` amount of $eth from its corresponding ctoken
         # https://compound.finance/docs/ctokens#redeem-underlying
-        for ctoken in self.comptroller.getAllMarkets():
-            ctoken = self.safe.contract(ctoken)
-            if ctoken.symbol() == 'cETH':
-                assert ctoken.redeemUnderlying(mantissa).return_value == 0
-                return
-        # for loop did not find $ceth
-        raise
+        ctoken = self._get_ctoken(ETH_ADDRESS)
+        assert ctoken.redeemUnderlying(mantissa).return_value == 0
 
 
     def withdraw_ctoken(self, ctoken, mantissa):
@@ -86,10 +74,29 @@ class Compound():
         assert ctoken.redeem(mantissa).return_value == 0
 
 
+    def borrow(self, underlying, mantissa):
+        pass
+        # enter market if needed
+        # ctoken.borrow()
+
+
+    def repay(self, underlying, mantissa=None):
+        ctoken = self._get_ctoken(underlying)
+        if mantissa:
+            underlying.approve(ctoken, mantissa)
+            ctoken.repay(mantissa)
+        else:
+            underlying.approve(ctoken, underlying.balanceOf(self.safe))
+            ctoken.repay(2 ** 256 - 1)
+
+
+    def repay_all(self, underlying):
+        self.repay(underlying)
+
+
     def claim_all(self):
         # claim all $comp accrued by safe in all markets
         # https://compound.finance/docs/comptroller#claim-comp
-
         bal_before = self.comp.balanceOf(self.safe)
         self.comptroller.claimComp(self.safe)
         assert self.comp.balanceOf(self.safe) > bal_before
@@ -104,19 +111,8 @@ class Compound():
             underlyings = [underlyings]
         ctokens = []
         for underlying in underlyings:
-            for ctoken in self.comptroller.getAllMarkets():
-                ctoken = self.safe.contract(ctoken)
-                try:
-                    if ctoken.underlying() == underlying.address:
-                        ctokens.append(ctoken.address)
-                        break
-                except AttributeError:
-                    if ctoken.symbol() == 'cETH':
-                        # $ceth has no underlying
-                        pass
-                    else:
-                        # in case `AttributeError` stems from something else
-                        raise
+            ctoken = self._get_ctoken(underlying)
+            ctokens.append(ctoken.address)
         assert len(ctokens) > 0
         bal_before = self.comp.balanceOf(self.safe)
         self.comptroller.claimComp(self.safe, ctokens)

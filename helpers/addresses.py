@@ -123,6 +123,7 @@ ADDRESSES_ETH = {
         "DFD": "0x20c36f062a31865bED8a5B1e512D9a1A20AA333A",
         "CRV": "0xD533a949740bb3306d119CC777fa900bA034cd52",
         "WBTC": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+        "cWBTC": "0xccF4429DB6322D5C611ee964527D42E5d685DD6a",
         "renBTC": "0xEB4C2781e4ebA804CE9a9803C67d0893436bB27D",
         "sBTC": "0xfE18be6b3Bd88A2D2A7f928d00292E7a9963CfC6",
         "WETH": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
@@ -834,13 +835,16 @@ ADDRESSES_FANTOM = {
         "router": "0xF491e7B69E4244ad4002BC14e878a34207E38c29",
         "factory": "0x152eE697f2E276fA89E96742e9bB9aB1F2E61bE3"
     },
+    "logic": {
+        "theVaultWithoutTree": "0xEf919733Eeb7326c5389f4a5D7337cdF078b0db9"
+    },
     "registry": "0xFda7eB6f8b7a9e9fCFd348042ae675d1d652454f",
     "registry_v2": "0xdc602965F3e5f1e7BAf2446d5564b407d5113A06",
     "rewardsLogger": "0xaB2F5E2709286aCe1863DF8ee55475482781F68C",
     "governance_timelock": "0x5ddE67e4f0abD7a94E99C037A04A1946f9DbaA36",
-    "logic": {
-        "theVaultWithoutTree": "0xEf919733Eeb7326c5389f4a5D7337cdF078b0db9"
-    }
+    "keeperAccessControl": "0x0680b32b52C5ca8C731490c0C576337058f39337",
+    "devProxyAdmin": "0x20Dce41Acca85E8222D6861Aa6D23B6C941777bF",
+    "guardian": "0x576DFDEc454792773dD26a781177CF998aA832E3",
 }
 
 
@@ -888,7 +892,13 @@ def get_registry():
         return registry.ftm
 
 
-r = get_registry()
+try:
+    r = get_registry()
+except AttributeError as e:
+    if str(e) == "'NoneType' object has no attribute 'request_func'":
+        # probably in brownie test mode; it loads this module before making the
+        # chain object available
+        r = registry.eth
 
 # flatten nested dicts and invert the resulting key <-> value
 # this allows for reversed lookup of an address
