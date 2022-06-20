@@ -32,6 +32,9 @@ class UniV3:
         self.factory = interface.IUniswapV3Factory(
             registry.eth.uniswap.factoryV3, owner=self.safe.account
         )
+        self.router = safe.contract(
+            registry.eth.uniswap.factoryV3, interface.ISwapRouter
+        )
         self.v3pool_wbtc_badger = interface.IUniswapV3Pool(
             registry.eth.uniswap.v3pool_wbtc_badger, owner=self.safe.account
         )
@@ -113,7 +116,7 @@ class UniV3:
 
         # https://etherscan.io/address/0xC36442b4a4522E871399CD717aBDD847Ab11FE88#code#F1#L314
         amount0, amount1 = self.nonfungible_position_manager.collect.call(params)
-        
+
         if amount0 > 0 or amount1 > 0:
             self.nonfungible_position_manager.collect(params)
 

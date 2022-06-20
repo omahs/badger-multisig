@@ -441,6 +441,7 @@ ADDRESSES_ETH = {
         "NonfungiblePositionManager": "0xC36442b4a4522E871399CD717aBDD847Ab11FE88",
         "routerV2": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
         "factoryV2": "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f",
+        "factoryV3": "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45",
     },
     "sushiswap": {
         "routerV2": "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F",
