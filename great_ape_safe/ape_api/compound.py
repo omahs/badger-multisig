@@ -37,6 +37,14 @@ class Compound():
         raise
 
 
+    def _enter_market(self, underlying):
+        # https://compound.finance/docs/comptroller#enter-markets
+        ctoken = self._get_ctoken(underlying)
+        self.comptroller.enterMarkets([ctoken])
+        # assert self.comptroller.getAccountLiquidity(self.safe)[0] == 0
+        # assert self.comptroller.getAccountLiquidity(self.safe)[0] > 0
+
+
     def deposit(self, underlying, mantissa):
         # deposit `mantissa` amount of `underlying` into its respective compound's ctoken
         # https://compound.finance/docs/ctokens#mint
@@ -74,20 +82,20 @@ class Compound():
         assert ctoken.redeem(mantissa).return_value == 0
 
 
-    def borrow(self, underlying, mantissa):
-        pass
-        # enter market if needed
-        # ctoken.borrow()
+    def borrow(self, underlying, borrow, mantissa):
+        self._enter_market(underlying)
+        ctoken = self._get_ctoken(borrow)
+        ctoken.borrow(mantissa)
 
 
     def repay(self, underlying, mantissa=None):
         ctoken = self._get_ctoken(underlying)
         if mantissa:
             underlying.approve(ctoken, mantissa)
-            ctoken.repay(mantissa)
+            ctoken.repayBorrow(mantissa)
         else:
             underlying.approve(ctoken, underlying.balanceOf(self.safe))
-            ctoken.repay(2 ** 256 - 1)
+            ctoken.repayBorrow(2 ** 256 - 1)
 
 
     def repay_all(self, underlying):
